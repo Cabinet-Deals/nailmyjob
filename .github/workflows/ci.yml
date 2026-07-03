@@ -59,7 +59,6 @@ jobs:
         run: |
           echo "environment=production" >> $GITHUB_OUTPUT
           echo "kamal_destination=" >> $GITHUB_OUTPUT
-          echo "bws_project_id=${{ secrets.BWS_PROJECT_ID }}" >> $GITHUB_OUTPUT
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
@@ -81,13 +80,8 @@ jobs:
           EOF
           chmod 600 ~/.ssh/config
 
-      - name: Install Bitwarden Secrets Manager CLI
-        run: |
-          curl -sL "https://github.com/bitwarden/sdk/releases/download/bws-v1.0.0/bws-x86_64-unknown-linux-gnu-1.0.0.zip" -o bws.zip
-          unzip -q bws.zip -d bws
-          sudo mv bws/bws /usr/local/bin/bws
-          rm -rf bws bws.zip
-          bws --version
+      - name: Install Doppler CLI
+        uses: dopplerhq/cli-action@v4
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -98,9 +92,8 @@ jobs:
       - name: Deploy to ${{ steps.vars.outputs.environment }} with Kamal
         env:
           RAILS_ENV: production
-          BWS_ACCESS_TOKEN: ${{ secrets.BWS_ACCESS_TOKEN }}
-          BWS_PROJECT_ID: ${{ steps.vars.outputs.bws_project_id }}
-          BWS_SERVER_URL: https://vault.bitwarden.com
+          # Read-only Doppler service token (project: nailmyjob / config: prd). Migrated from Bitwarden 2026-07-03.
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
         run: |
           eval "$(ssh-agent -s)"
           ssh-add ~/.ssh/keys/hetzner/nailmyjob
